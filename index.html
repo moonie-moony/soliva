@@ -1,12 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QuizBlitz</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuizBlitz - Modern Kahoot-like Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/framer-motion/dist/framer-motion.umd.js"></script>
+  <style>
+    body {
+      background: #121212;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    /* Moving gradient animation for highlights */
+    .gradient-move {
+      background-size: 200% 200%;
+      animation: gradientShift 3s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+    /* Transparent card frame */
+    .transparent-card {
+      background-color: rgba(255 255 255 / 0.05);
+      backdrop-filter: blur(12px);
+      border-radius: 12px;
+      border: 1.5px solid rgba(255 255 255 / 0.1);
+      box-shadow: 0 0 12px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 text-white">
+  <div id="root" class="w-full max-w-3xl"></div>
+
+  <script type="text/javascript">
+    const { useState, useEffect } = React;
+    const { motion, AnimatePresence } = window['framer-motion'];
+
+    // Sample quiz data
+    const QUIZ_QUESTIONS = [
+      {
+        id: 1,
+        question: "What is the capital of France?",
+        options: ["Berlin", "London", "Paris", "Rome"],
+        answer: 2, // Paris
+      },
+      {
+        id: 2,
+        question: "Which planet is known as the Red Planet?",
+        options: ["Earth", "Mars", "Jupiter", "Venus"],
+        answer: 1, // Mars
+      },
+      {
+        id: 3,
+        question: "Who wrote 'Hamlet'?",
+        options: ["Mark Twain", "Charles Dickens", "William Shakespeare", "J.K. Rowling"],
+        answer: 2, // Shakespeare
+      },
+    ];
+
+    // Gradient colors for correct and incorrect
+    const GRADIENT_CORRECT = "linear-gradient(270deg, #00ff99, #00cc66, #00ff99)";
+    const GRADIENT_INCORRECT = "linear-gradient(270deg, #ff3344, #cc2233, #ff3344)";
+
+    function App() {
+      const [username, setUsername] = useState("");
+      const [nameInput, setNameInput] = useState("");
+      const [started, setStarted] = useState(false);
+      const [currentQ, setCurrentQ] = useState(0);
+      const [selected, setSelected] = useState(null);
+      const [score, setScore] = useState(0);
+      const [showFeedback, setShowFeedback] = useState(false);
+
+      // Load username from localStorage on mount
+      useEffect(() => {
+        const stored = localStorage.getItem("quizblitz_username");
+        if (stored) {
+          setUsername(stored);
+          setStarted(true);
+        }
+      }, []);
+
+      // Save username to localStorage when set
+      useEffect(() => {
+        if (username) localStorage.setItem("quizblitz_username", username);
+      }, [username]);
+
+      // Handle answer selection
+      function selectAnswer(idx) {
+        if (showFeedback) return; // prevent multiple clicks
+
+        setSelected(idx);
+        setShowFeedback(true);
+
+        const correctIdx = QUIZ_QUESTIONS[currentQ].answer;
+        if (idx === correctIdx) {
+          setScore(s => s + 1);
+        }
+
+        // After 2 seconds, move to next or finish
+        setTimeout(() => {
+          setShowFeedback(false);
+          setSelected(null);
+          if (currentQ + 1 < QUIZ_QUESTIONS.length) {
+            setCurrentQ(q => q + 1);
+          } else {
+            setStarted(false); // End quiz, show summary
+          }
+        }, 2000);
+      }
+
+      if (!started) {
+        // If quiz ended & username known, show score summary
+        if (username && currentQ === QUIZ_QUESTIONS.length) {
+          return (
+            <div className="transparent-card p-8 mx-4 text-center">
+              <h2 className="text-3xl font-semibold mb-4">Quiz Finished!</h2>
+              <p className="text-xl mb-6">Well done, <span className="font-bold">{username}</span>!</p>
+              <p className="text-2xl mb-6">Your score: <span className="text-green-400">{score} / {QUIZ_QUESTIONS.length}</span></p>
+              <button
+                onClick={() => {
+                  setScore(0);
+                  setCurrentQ(0);
+                  setStarted(true);
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-green-400 to-blue-500 rounded-md font-semibold hover:brightness-110 transition"
+              >Play Again</button>
+              <button
+                onClick={() => {
+                  setUsername("");
+                  localStorage.removeItem("quizblitz_username");
+                }}
+                className="ml-4 px-6 py-3 bg-red-600 rounded-md font-semibold hover:brightness-110 transition"
+              >Logout</button>
+            </div>
+          );
+        }
+
+        // Signup screen
+        return (
+          <div className="transparent-card p-8 mx-4 max-w-md mx-auto">
+            <h1 className="text-4xl font-bold mb-6 text-center">Welcome to QuizBlitz</h1>
+            <label className="block mb-2 text-lg font-medium" htmlFor="username">Enter your username:</label>
+            <input
+              id="username"
+              type="text"
+              maxLength={15}
+              placeholder="Your username"
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value.replace(/\s/g, ""))}
+              className="w-full p-3 rounded-md bg-transparent border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-green-400"
+              onKeyDown={e => e.key === "Enter" && nameInput.trim() && setUsername(nameInput.trim()) && setStarted(true)}
+            />
+            <button
+              disabled={!nameInput.trim()}
+              onClick={() => {
+                setUsername(nameInput.trim());
+                setStarted(true);
+              }}
+              className={`mt-6 w-full py-3 rounded-md font-semibold transition
+                ${nameInput.trim() ? 'bg-gradient-to-r from-green-400 to-blue-500 hover:brightness-110 cursor-pointer' : 'bg-gray-700 cursor-not-allowed'}`}
+            >
+              Start Quiz
+            </button>
+          </div>
+        );
+      }
+
+      // Quiz question screen
+      const q = QUIZ_QUESTIONS[currentQ];
+
+      return (
+        <div className="transparent-card p-8 mx-4 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-semibold mb-4">Hello, {username}</h2>
+          <p className="mb-2 font-medium text-gray-300">Question {currentQ + 1} / {QUIZ_QUESTIONS.length}</p>
+          <h3 className="text-2xl mb-8">{q.question}</h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            {q.options.map((opt, i) => {
+              let isCorrect = i === q.answer;
+              let isSelected = i === selected;
+
+              // Determine gradient and border styles on selection + feedback
+              let style = {};
+              let classNames = `cursor-pointer select-none p-4 rounded-lg border-2 border-transparent
+                transition-all duration-300 flex items-center justify-center text-lg font-medium
+                bg-black/10 hover:bg-black/20`;
+
+              if (showFeedback && isSelected) {
+                if (isCorrect) {
+                  style.background = GRADIENT_CORRECT;
+                  style.backgroundSize = "200% 200%";
+                  style.animation = "gradientShift 3s ease infinite";
+                  classNames += " text-black font-bold";
+                } else {
+                  style.background = GRADIENT_INCORRECT;
+                  style.backgroundSize = "200% 200%";
+                  style.animation = "gradientShift 3s ease infinite";
+                  classNames += " text-black font-bold";
+                }
+              } else if (showFeedback && isCorrect) {
+                // Show correct answer highlight if user picked wrong
+                style.background = GRADIENT_CORRECT;
+                style.backgroundSize = "200% 200%";
+                style.animation = "gradientShift 3s ease infinite";
+                classNames += " text-black font-bold";
+              }
+
+              return (
+                <motion.button
+                  key={i}
+                  onClick={() => selectAnswer(i)}
+                  style={style}
+                  className={classNames}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={showFeedback}
+                >
+                  {opt}
+                </motion.button>
+              );
+            })}
+          </div>
+          <p className="mt-6 text-right text-gray-400 italic select-none">Score: {score}</p>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
 </html>
