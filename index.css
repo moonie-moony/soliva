@@ -1,0 +1,72 @@
+/* index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.main-bg {
+  @apply min-h-screen flex items-center justify-center text-white;
+  background: linear-gradient(270deg, #7f00ff, #e100ff, #ff005e, #00ffcb);
+  background-size: 800% 800%;
+  animation: gradientMove 15s ease infinite;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.frame {
+  @apply p-8 rounded-2xl shadow-xl text-center backdrop-blur-md;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 3px solid transparent;
+  transition: border 0.4s ease;
+}
+
+.frame.correct {
+  border-image: linear-gradient(45deg, #00ff88, #00ffaa) 1;
+  animation: pulseGreen 2s infinite;
+}
+
+.frame.incorrect {
+  border-image: linear-gradient(45deg, #ff0055, #ff4d4d) 1;
+  animation: pulseRed 2s infinite;
+}
+
+@keyframes pulseGreen {
+  0% { box-shadow: 0 0 10px #00ff88; }
+  50% { box-shadow: 0 0 20px #00ffaa; }
+  100% { box-shadow: 0 0 10px #00ff88; }
+}
+
+@keyframes pulseRed {
+  0% { box-shadow: 0 0 10px #ff0055; }
+  50% { box-shadow: 0 0 20px #ff4d4d; }
+  100% { box-shadow: 0 0 10px #ff0055; }
+}
+
+.title {
+  @apply text-5xl font-bold mb-6;
+}
+
+.form {
+  @apply space-y-4;
+}
+
+.input {
+  @apply w-full p-3 rounded-lg text-black outline-none;
+}
+
+.button {
+  @apply w-full py-3 rounded-lg bg-white text-black font-semibold hover:bg-gray-200 transition;
+}
+
+.joined {
+  @apply text-lg;
+}
